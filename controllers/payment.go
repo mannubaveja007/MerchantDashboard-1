@@ -23,7 +23,7 @@ func callPayMEAPI(method, endpoint string, token string, body interface{}) (*htt
 		}
 	}
 
-	req, err := http.NewRequest(method, "https://api.paymfin.tech/api"+endpoint, bytes.NewBuffer(reqBody))
+	req, err := http.NewRequest(method, "https://api.paymefin.tech/api"+endpoint, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, err
 	}
