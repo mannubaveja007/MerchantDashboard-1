@@ -69,8 +69,7 @@ func ReceiveMoney(c *gin.Context) {
 	token := c.GetHeader("Authorization") // Extract token from request header
 	// Implement the logic to receive money using the PayME API
 	// Assuming there's an endpoint for receiving money
-	// This is a placeholder as per the provided documentation.
-	// Adjust as needed based on actual API capabilities.
+	// Adjust 
 
 	// Example:
 	response, err := callPayMEAPI("POST", "/BLOCKCHAIN/RECEIVE", token, receiveData)
