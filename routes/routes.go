@@ -9,7 +9,7 @@ import (
 func InitRoutes(r *gin.Engine) {
 	// Product routes
 	r.POST("/products", controllers.CreateProduct)
-	r.GET("/products", controllers.GetProducts) // Adjusted to get products by merchant_id as a query parameter
+	r.GET("/products", controllers.GetProducts)
 	r.PUT("/products/:merchantId/:productId", controllers.UpdateProduct)
 	r.DELETE("/products/:merchantId/:productId", controllers.DeleteProduct)
 

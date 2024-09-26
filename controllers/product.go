@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"merchant-dashboard/models"
 	"net/http"
 	"strconv"
 
@@ -18,16 +19,8 @@ func init() {
 	db = dynamodb.New(sess)
 }
 
-type Product struct {
-	MerchantID string  `json:"merchant_id"`
-	ProductID  string  `json:"product_id"`
-	Name       string  `json:"name"`
-	Price      float64 `json:"price"`
-	Quantity   int     `json:"quantity"`
-}
-
 func CreateProduct(c *gin.Context) {
-	var product Product
+	var product models.Product
 	if err := c.ShouldBindJSON(&product); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -68,11 +61,11 @@ func GetProducts(c *gin.Context) {
 		return
 	}
 
-	products := make([]Product, len(result.Items))
+	products := make([]models.Product, len(result.Items))
 	for i, item := range result.Items {
 		price, _ := strconv.ParseFloat(*item["Price"].N, 64)
 		quantity, _ := strconv.Atoi(*item["Quantity"].N)
-		products[i] = Product{
+		products[i] = models.Product{
 			MerchantID: *item["MerchantID"].S,
 			ProductID:  *item["ProductID"].S,
 			Name:       *item["Name"].S,
@@ -85,7 +78,7 @@ func GetProducts(c *gin.Context) {
 }
 
 func UpdateProduct(c *gin.Context) {
-	var product Product
+	var product models.Product
 	if err := c.ShouldBindJSON(&product); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
