@@ -10,7 +10,7 @@ var db *dynamodb.DynamoDB
 
 func InitDB() {
     sess := session.Must(session.NewSession(&aws.Config{
-        Region: aws.String("us-west-2"),
+        Region: aws.String("us-east-1"),
     }))
     db = dynamodb.New(sess)
 }

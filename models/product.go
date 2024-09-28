@@ -1,9 +1,9 @@
 package models
 
 type Product struct {
-    MerchantID string  `json:"merchant_id"`
-    ProductID  string  `json:"product_id"`
+    MerchantID int     `json:"merchant_id"`
+    ProductID  int     `json:"product_id"`
     Name       string  `json:"name"`
-    Price      float64 `json:"price"`
+    Price      float64 `json:"price"`   // Change to float64
     Quantity   int     `json:"quantity"`
 }

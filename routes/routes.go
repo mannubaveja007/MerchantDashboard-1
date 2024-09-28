@@ -28,4 +28,7 @@ func InitRoutes(r *gin.Engine) {
 	r.GET("/subscriptions/:planId", controllers.GetSubscription)
 	r.PUT("/subscriptions/:planId", controllers.UpdateSubscription)
 	r.DELETE("/subscriptions/:planId", controllers.DeleteSubscription)
+
+	// Login route
+	r.POST("/auth/login", controllers.Login)
 }

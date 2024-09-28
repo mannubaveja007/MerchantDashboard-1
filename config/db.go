@@ -8,7 +8,7 @@ import (
 
 func InitDB() *dynamodb.DynamoDB {
     sess := session.Must(session.NewSession(&aws.Config{
-        Region: aws.String("us-east-2"),
+        Region: aws.String("us-east-1"),
     }))
     return dynamodb.New(sess)
 }

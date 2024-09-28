@@ -14,7 +14,7 @@ import (
 
 func init() {
 	sess := session.Must(session.NewSession(&aws.Config{
-		Region: aws.String("us-west-2"),
+		Region: aws.String("us-east-1"),
 	}))
 	db = dynamodb.New(sess)
 }
@@ -27,18 +27,18 @@ func CreateProduct(c *gin.Context) {
 	}
 
 	_, err := db.PutItem(&dynamodb.PutItemInput{
-		TableName: aws.String("ProductsTable"),
+		TableName: aws.String("products"),
 		Item: map[string]*dynamodb.AttributeValue{
-			"MerchantID": {S: aws.String(product.MerchantID)},
-			"ProductID":  {S: aws.String(product.ProductID)},
+			"merchantID": {N: aws.String(strconv.Itoa(product.MerchantID))},
+			"productID":  {N: aws.String(strconv.Itoa(product.ProductID))},
 			"Name":       {S: aws.String(product.Name)},
-			"Price":      {N: aws.String(fmt.Sprintf("%f", product.Price))},
-			"Quantity":   {N: aws.String(fmt.Sprintf("%d", product.Quantity))},
+			"Price":      {N: aws.String(fmt.Sprintf("%.2f", product.Price))}, // Format as float
+			"Quantity":   {N: aws.String(strconv.Itoa(product.Quantity))},
 		},
 	})
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create product"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -49,10 +49,10 @@ func GetProducts(c *gin.Context) {
 	merchantID := c.Query("merchant_id")
 
 	result, err := db.Scan(&dynamodb.ScanInput{
-		TableName:        aws.String("ProductsTable"),
-		FilterExpression: aws.String("MerchantID = :mid"),
+		TableName:        aws.String("products"),
+		FilterExpression: aws.String("merchantID = :mid"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":mid": {S: aws.String(merchantID)},
+			":mid": {N: aws.String(merchantID)},
 		},
 	})
 
@@ -65,9 +65,12 @@ func GetProducts(c *gin.Context) {
 	for i, item := range result.Items {
 		price, _ := strconv.ParseFloat(*item["Price"].N, 64)
 		quantity, _ := strconv.Atoi(*item["Quantity"].N)
+		merchantID, _ := strconv.Atoi(*item["merchantID"].N)
+		productID, _ := strconv.Atoi(*item["productID"].N)
+
 		products[i] = models.Product{
-			MerchantID: *item["MerchantID"].S,
-			ProductID:  *item["ProductID"].S,
+			MerchantID: merchantID,
+			ProductID:  productID,
 			Name:       *item["Name"].S,
 			Price:      price,
 			Quantity:   quantity,
@@ -85,16 +88,16 @@ func UpdateProduct(c *gin.Context) {
 	}
 
 	_, err := db.UpdateItem(&dynamodb.UpdateItemInput{
-		TableName: aws.String("ProductsTable"),
+		TableName: aws.String("products"),
 		Key: map[string]*dynamodb.AttributeValue{
-			"MerchantID": {S: aws.String(product.MerchantID)},
-			"ProductID":  {S: aws.String(product.ProductID)},
+			"merchantID": {N: aws.String(strconv.Itoa(product.MerchantID))},
+			"productID":  {N: aws.String(strconv.Itoa(product.ProductID))},
 		},
 		UpdateExpression: aws.String("set Name = :name, Price = :price, Quantity = :quantity"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":name":     {S: aws.String(product.Name)},
-			":price":    {N: aws.String(fmt.Sprintf("%f", product.Price))},
-			":quantity": {N: aws.String(fmt.Sprintf("%d", product.Quantity))},
+			":price":    {N: aws.String(fmt.Sprintf("%.2f", product.Price))}, // Format as float
+			":quantity": {N: aws.String(strconv.Itoa(product.Quantity))},
 		},
 	})
 
@@ -111,10 +114,10 @@ func DeleteProduct(c *gin.Context) {
 	productID := c.Param("productId")
 
 	_, err := db.DeleteItem(&dynamodb.DeleteItemInput{
-		TableName: aws.String("ProductsTable"),
+		TableName: aws.String("products"),
 		Key: map[string]*dynamodb.AttributeValue{
-			"MerchantID": {S: aws.String(merchantID)},
-			"ProductID":  {S: aws.String(productID)},
+			"merchantID": {N: aws.String(merchantID)},
+			"productID":  {N: aws.String(productID)},
 		},
 	})
 
