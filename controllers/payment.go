@@ -59,6 +59,8 @@ func TransferMoney(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Money transferred successfully"})
 }
 
+
+//return their number and qrcode that contains number
 func ReceiveMoney(c *gin.Context) {
 	var receiveData models.ReceiveRequest
 	if err := c.ShouldBindJSON(&receiveData); err != nil {
@@ -88,3 +90,5 @@ func ReceiveMoney(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Money received successfully"})
 }
+
+
