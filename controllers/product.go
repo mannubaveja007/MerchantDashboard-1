@@ -47,6 +47,10 @@ func CreateProduct(c *gin.Context) {
 
 func GetProducts(c *gin.Context) {
 	merchantID := c.Query("merchant_id")
+	if merchantID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "merchant_id is required"})
+		return
+	}
 
 	result, err := db.Scan(&dynamodb.ScanInput{
 		TableName:        aws.String("products"),
@@ -57,24 +61,24 @@ func GetProducts(c *gin.Context) {
 	})
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve products"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve products", "details": err.Error()})
 		return
 	}
 
-	products := make([]models.Product, len(result.Items))
-	for i, item := range result.Items {
+	products := make([]models.Product, 0) // Use 0 for initial length
+	for _, item := range result.Items {
 		price, _ := strconv.ParseFloat(*item["Price"].N, 64)
 		quantity, _ := strconv.Atoi(*item["Quantity"].N)
 		merchantID, _ := strconv.Atoi(*item["merchantID"].N)
 		productID, _ := strconv.Atoi(*item["productID"].N)
 
-		products[i] = models.Product{
+		products = append(products, models.Product{
 			MerchantID: merchantID,
 			ProductID:  productID,
 			Name:       *item["Name"].S,
 			Price:      price,
 			Quantity:   quantity,
-		}
+		})
 	}
 
 	c.JSON(http.StatusOK, products)
@@ -96,13 +100,13 @@ func UpdateProduct(c *gin.Context) {
 		UpdateExpression: aws.String("set Name = :name, Price = :price, Quantity = :quantity"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":name":     {S: aws.String(product.Name)},
-			":price":    {N: aws.String(fmt.Sprintf("%.2f", product.Price))}, // Format as float
+			":price":    {N: aws.String(fmt.Sprintf("%.2f", product.Price))},
 			":quantity": {N: aws.String(strconv.Itoa(product.Quantity))},
 		},
 	})
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update product"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Could not update product: %v", err)})
 		return
 	}
 
@@ -122,7 +126,7 @@ func DeleteProduct(c *gin.Context) {
 	})
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete product"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Could not delete product: %v", err)})
 		return
 	}
 
