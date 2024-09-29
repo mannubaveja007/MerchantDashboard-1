@@ -2,15 +2,17 @@ package controllers
 
 import (
 	"fmt"
-	"merchant-dashboard/models"
 	"net/http"
 	"strconv"
+
+	"merchant-dashboard/models"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/gin-gonic/gin"
 )
+
 
 func init() {
 	sess := session.Must(session.NewSession(&aws.Config{
@@ -19,6 +21,7 @@ func init() {
 	db = dynamodb.New(sess)
 }
 
+// CreateProduct adds a new product to the DynamoDB table
 func CreateProduct(c *gin.Context) {
 	var product models.Product
 	if err := c.ShouldBindJSON(&product); err != nil {
@@ -29,10 +32,10 @@ func CreateProduct(c *gin.Context) {
 	_, err := db.PutItem(&dynamodb.PutItemInput{
 		TableName: aws.String("products"),
 		Item: map[string]*dynamodb.AttributeValue{
-			"merchantID": {N: aws.String(strconv.Itoa(product.MerchantID))},
-			"productID":  {N: aws.String(strconv.Itoa(product.ProductID))},
+			"merchantID": {S: aws.String(product.MerchantID)},
+			"productID":  {S: aws.String(product.ProductID)},
 			"Name":       {S: aws.String(product.Name)},
-			"Price":      {N: aws.String(fmt.Sprintf("%.2f", product.Price))}, // Format as float
+			"Price":      {N: aws.String(fmt.Sprintf("%.2f", product.Price))},
 			"Quantity":   {N: aws.String(strconv.Itoa(product.Quantity))},
 		},
 	})
@@ -45,6 +48,7 @@ func CreateProduct(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Product created"})
 }
 
+// GetProducts retrieves all products for a given merchant
 func GetProducts(c *gin.Context) {
 	merchantID := c.Query("merchant_id")
 	if merchantID == "" {
@@ -56,7 +60,7 @@ func GetProducts(c *gin.Context) {
 		TableName:        aws.String("products"),
 		FilterExpression: aws.String("merchantID = :mid"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":mid": {N: aws.String(merchantID)},
+			":mid": {S: aws.String(merchantID)},
 		},
 	})
 
@@ -65,16 +69,14 @@ func GetProducts(c *gin.Context) {
 		return
 	}
 
-	products := make([]models.Product, 0) // Use 0 for initial length
+	products := make([]models.Product, 0) // Initialize an empty slice
 	for _, item := range result.Items {
 		price, _ := strconv.ParseFloat(*item["Price"].N, 64)
 		quantity, _ := strconv.Atoi(*item["Quantity"].N)
-		merchantID, _ := strconv.Atoi(*item["merchantID"].N)
-		productID, _ := strconv.Atoi(*item["productID"].N)
 
 		products = append(products, models.Product{
-			MerchantID: merchantID,
-			ProductID:  productID,
+			MerchantID: *item["merchantID"].S,
+			ProductID:  *item["productID"].S,
 			Name:       *item["Name"].S,
 			Price:      price,
 			Quantity:   quantity,
@@ -84,6 +86,7 @@ func GetProducts(c *gin.Context) {
 	c.JSON(http.StatusOK, products)
 }
 
+// UpdateProduct modifies an existing product in the DynamoDB table
 func UpdateProduct(c *gin.Context) {
 	var product models.Product
 	if err := c.ShouldBindJSON(&product); err != nil {
@@ -94,8 +97,8 @@ func UpdateProduct(c *gin.Context) {
 	_, err := db.UpdateItem(&dynamodb.UpdateItemInput{
 		TableName: aws.String("products"),
 		Key: map[string]*dynamodb.AttributeValue{
-			"merchantID": {N: aws.String(strconv.Itoa(product.MerchantID))},
-			"productID":  {N: aws.String(strconv.Itoa(product.ProductID))},
+			"merchantID": {S: aws.String(product.MerchantID)},
+			"productID":  {S: aws.String(product.ProductID)},
 		},
 		UpdateExpression: aws.String("set Name = :name, Price = :price, Quantity = :quantity"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
@@ -113,6 +116,7 @@ func UpdateProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Product updated"})
 }
 
+// DeleteProduct removes a product from the DynamoDB table
 func DeleteProduct(c *gin.Context) {
 	merchantID := c.Param("merchantId")
 	productID := c.Param("productId")
@@ -120,8 +124,8 @@ func DeleteProduct(c *gin.Context) {
 	_, err := db.DeleteItem(&dynamodb.DeleteItemInput{
 		TableName: aws.String("products"),
 		Key: map[string]*dynamodb.AttributeValue{
-			"merchantID": {N: aws.String(merchantID)},
-			"productID":  {N: aws.String(productID)},
+			"merchantID": {S: aws.String(merchantID)},
+			"productID":  {S: aws.String(productID)},
 		},
 	})
 

@@ -17,8 +17,8 @@ func TestCreateProduct_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	product := models.Product{
-		MerchantID: 123,
-		ProductID:  456,
+		MerchantID: "123",
+		ProductID:  "456",
 		Name:       "Test Product",
 		Price:      99,
 		Quantity:   10,
