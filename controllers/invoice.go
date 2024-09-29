@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"merchant-dashboard/models"
 	"net/http"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -9,16 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Invoice struct {
-	InvoiceID  string  `json:"invoice_id"`
-	MerchantID string  `json:"merchant_id"`
-	Amount     float64 `json:"amount"`
-	Status     string  `json:"status"` // e.g., "Pending", "Paid", "Cancelled"
-}
-
 // CreateInvoice creates a new invoice
 func CreateInvoice(c *gin.Context) {
-	var invoice Invoice
+	var invoice models.Invoice
 	if err := c.ShouldBindJSON(&invoice); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -64,7 +58,7 @@ func CheckInvoiceStatus(c *gin.Context) {
 
 // UpdateInvoice updates an existing invoice
 func UpdateInvoice(c *gin.Context) {
-	var invoice Invoice
+	var invoice models.Invoice
 	if err := c.ShouldBindJSON(&invoice); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

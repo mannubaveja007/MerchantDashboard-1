@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"merchant-dashboard/models"
 	"net/http"
 	"strconv"
 
@@ -20,14 +21,8 @@ func init() {
 	db = dynamodb.New(sess)
 }
 
-type Subscription struct {
-	PlanID     string  `json:"plan_id"`
-	CustomerID string  `json:"customer_id"`
-	Price      float64 `json:"price"`
-}
-
 func CreateSubscription(c *gin.Context) {
-	var subscription Subscription
+	var subscription models.Subscription
 	if err := c.ShouldBindJSON(&subscription); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -68,7 +63,7 @@ func GetSubscription(c *gin.Context) {
 	}
 
 	price, _ := strconv.ParseFloat(*result.Item["Price"].N, 64)
-	subscription := Subscription{
+	subscription := models.Subscription{
 		PlanID:     *result.Item["PlanID"].S,
 		CustomerID: *result.Item["CustomerID"].S,
 		Price:      price,
@@ -78,7 +73,7 @@ func GetSubscription(c *gin.Context) {
 }
 
 func UpdateSubscription(c *gin.Context) {
-	var subscription Subscription
+	var subscription models.Subscription
 	if err := c.ShouldBindJSON(&subscription); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
