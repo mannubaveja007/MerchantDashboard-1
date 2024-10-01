@@ -14,7 +14,6 @@ func InitRoutes(r *gin.Engine) {
 	r.DELETE("/products/:merchantId/:productId", controllers.DeleteProduct)
 
 	// Payment routes
-	//TODO=> AUTH/JWT
 	r.POST("/payments/transfer", controllers.TransferMoney)
 	r.POST("/payments/receive", controllers.ReceiveMoney)
 

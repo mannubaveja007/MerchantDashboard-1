@@ -19,7 +19,7 @@ func Login(c *gin.Context) {
 	}
 
 	// Authenticate user (this is a placeholder; replace with your authentication logic)
-	if user.Username == "917650091138" && user.Password == "pass" {
+	if user.Username == "username" && user.Password == "password" {
 		// Generate JWT token
 		token, err := utils.GenerateJWT(user.Username)
 		if err != nil {
