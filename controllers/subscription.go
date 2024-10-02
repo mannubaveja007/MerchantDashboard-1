@@ -2,13 +2,16 @@ package controllers
 
 import (
 	"fmt"
-	"merchant-dashboard/models"
 	"net/http"
 	"strconv"
+
+	"merchant-dashboard/config" 
+	"merchant-dashboard/models"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/confluentinc/confluent-kafka-go/kafka" 
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,6 +23,7 @@ func init() {
 	}))
 	db = dynamodb.New(sess)
 }
+
 func CreateSubscription(c *gin.Context) {
 	var subscription models.Subscription
 	if err := c.ShouldBindJSON(&subscription); err != nil {
@@ -31,15 +35,29 @@ func CreateSubscription(c *gin.Context) {
 		Item: map[string]*dynamodb.AttributeValue{
 			"PlanID":     {S: aws.String(subscription.PlanID)},
 			"CustomerID": {S: aws.String(subscription.CustomerID)},
-			"Price":      {N: aws.String(fmt.Sprintf("%f", subscription.Price))},
+			"Price":      {N: aws.String(fmt.Sprintf("%.2f", subscription.Price))},
 		},
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create subscription"})
 		return
 	}
+
+	
+	msg := &kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &[]string{"subscription_events"}[0], Partition: 0}, 
+		Value:          []byte(fmt.Sprintf("Created subscription for customer: %s", subscription.CustomerID)),
+	}
+
+	
+	if err := config.KafkaProducer.Produce(msg, nil); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not send message to Kafka"})
+		return
+	}
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Subscription created"})
 }
+
 func GetSubscription(c *gin.Context) {
 	planID := c.Param("plan_id")
 	customerID := c.Param("customer_id")
@@ -62,6 +80,7 @@ func GetSubscription(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, subscription)
 }
+
 func UpdateSubscription(c *gin.Context) {
 	var subscription models.Subscription
 	if err := c.ShouldBindJSON(&subscription); err != nil {
@@ -76,15 +95,29 @@ func UpdateSubscription(c *gin.Context) {
 		},
 		UpdateExpression: aws.String("set Price = :price"),
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":price": {N: aws.String(fmt.Sprintf("%f", subscription.Price))},
+			":price": {N: aws.String(fmt.Sprintf("%.2f", subscription.Price))},
 		},
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update subscription"})
 		return
 	}
+
+	
+	msg := &kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &[]string{"subscription_events"}[0], Partition: 0}, 
+		Value:          []byte(fmt.Sprintf("Updated subscription for customer: %s", subscription.CustomerID)),
+	}
+
+	
+	if err := config.KafkaProducer.Produce(msg, nil); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not send message to Kafka"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Subscription updated"})
 }
+
 func DeleteSubscription(c *gin.Context) {
 	planID := c.Param("plan_id")
 	customerID := c.Param("customer_id")
@@ -99,5 +132,18 @@ func DeleteSubscription(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete subscription"})
 		return
 	}
+
+	
+	msg := &kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &[]string{"subscription_events"}[0], Partition: 0}, 
+		Value:          []byte(fmt.Sprintf("Deleted subscription for customer: %s", customerID)),
+	}
+
+	
+	if err := config.KafkaProducer.Produce(msg, nil); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not send message to Kafka"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Subscription deleted"})
 }

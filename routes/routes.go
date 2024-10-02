@@ -13,10 +13,6 @@ func InitRoutes(r *gin.Engine) {
 	r.PUT("/products/:merchantId/:productId", controllers.UpdateProduct)
 	r.DELETE("/products/:merchantId/:productId", controllers.DeleteProduct)
 
-	// Payment routes
-	r.POST("/payments/transfer", controllers.TransferMoney)
-	r.POST("/payments/receive", controllers.ReceiveMoney)
-
 	// Invoice routes
 	r.POST("/invoices", controllers.CreateInvoice)
 	r.GET("/invoices/:invoiceId", controllers.CheckInvoiceStatus)
@@ -25,9 +21,9 @@ func InitRoutes(r *gin.Engine) {
 
 	// Subscription routes
 	r.POST("/subscriptions", controllers.CreateSubscription)
-	r.GET("/subscriptions/:planId", controllers.GetSubscription)
-	r.PUT("/subscriptions/:planId", controllers.UpdateSubscription)
-	r.DELETE("/subscriptions/:planId", controllers.DeleteSubscription)
+	r.GET("/subscriptions/:planId/:customerId", controllers.GetSubscription) // Adjusted route
+	r.PUT("/subscriptions/:planId/:customerId", controllers.UpdateSubscription) // Adjusted route
+	r.DELETE("/subscriptions/:planId/:customerId", controllers.DeleteSubscription) // Adjusted route
 
 	// Login route
 	r.POST("/auth/login", controllers.Login)

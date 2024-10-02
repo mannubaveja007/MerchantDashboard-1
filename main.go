@@ -1,16 +1,19 @@
 package main
 
 import (
-    "github.com/gin-gonic/gin"
-    "merchant-dashboard/routes"
+	"log"
+	"merchant-dashboard/config"
+	"merchant-dashboard/routes"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-    r := gin.Default()
+	config.InitKafka("localhost:9092") 
 
-    // Initialize routes
-    routes.InitRoutes(r)
+	r := gin.Default()
+	routes.InitRoutes(r)
 
-    // Start the server
-    r.Run(":8080") // Listen on port 8080
+	if err := r.Run(":8080"); err != nil {
+		log.Fatalf("Could not start server: %v", err)
+	}
 }

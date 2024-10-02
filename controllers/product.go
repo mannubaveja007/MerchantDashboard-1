@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"merchant-dashboard/config"
 	"merchant-dashboard/models"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,6 +21,7 @@ func init() {
 	}))
 	db = dynamodb.New(sess)
 }
+
 func CreateProduct(c *gin.Context) {
 	var product models.Product
 	if err := c.ShouldBindJSON(&product); err != nil {
@@ -43,8 +46,20 @@ func CreateProduct(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	msg := &kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &[]string{"product_events"}[0], Partition: -1},
+		Value:          []byte(fmt.Sprintf("Created product: %s", product.ProductID)),
+	}
+
+	if err := config.KafkaProducer.Produce(msg, nil); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not send message to Kafka"})
+		return
+	}
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Product created"})
 }
+
 func UpdateProduct(c *gin.Context) {
 	merchantID := c.Param("merchantId")
 	productID := c.Param("productId")
@@ -65,7 +80,7 @@ func UpdateProduct(c *gin.Context) {
 		},
 		UpdateExpression: aws.String("SET #name = :name, Price = :price, Quantity = :quantity"),
 		ExpressionAttributeNames: map[string]*string{
-			"#name": aws.String("Name"), // Use #name as a placeholder for the reserved keyword
+			"#name": aws.String("Name"),
 		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":name":     {S: aws.String(product.Name)},
@@ -77,8 +92,20 @@ func UpdateProduct(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Could not update product: %v", err)})
 		return
 	}
+
+	msg := &kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &[]string{"product_events"}[0], Partition: -1},
+		Value:          []byte(fmt.Sprintf("Updated product: %s", product.ProductID)),
+	}
+
+	if err := config.KafkaProducer.Produce(msg, nil); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not send message to Kafka"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Product updated"})
 }
+
 func GetProducts(c *gin.Context) {
 	merchantID := c.Query("merchant_id")
 	if merchantID == "" {
@@ -96,7 +123,7 @@ func GetProducts(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve products", "details": err.Error()})
 		return
 	}
-	products := make([]models.Product, 0) // Initialize an empty slice
+	products := make([]models.Product, 0)
 	for _, item := range result.Items {
 		price, _ := strconv.ParseFloat(*item["Price"].N, 64)
 		quantity, _ := strconv.Atoi(*item["Quantity"].N)
@@ -111,6 +138,7 @@ func GetProducts(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, products)
 }
+
 func DeleteProduct(c *gin.Context) {
 	merchantID := c.Param("merchantId")
 	productID := c.Param("productId")
@@ -125,5 +153,16 @@ func DeleteProduct(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Could not delete product: %v", err)})
 		return
 	}
+
+	msg := &kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &[]string{"product_events"}[0], Partition: -1},
+		Value:          []byte(fmt.Sprintf("Deleted product: %s", productID)),
+	}
+
+	if err := config.KafkaProducer.Produce(msg, nil); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not send message to Kafka"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Product deleted"})
 }
