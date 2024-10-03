@@ -21,9 +21,9 @@ func InitRoutes(r *gin.Engine) {
 
 	// Subscription routes
 	r.POST("/subscriptions", controllers.CreateSubscription)
-	r.GET("/subscriptions/:planId/:customerId", controllers.GetSubscription) // Adjusted route
-	r.PUT("/subscriptions/:planId/:customerId", controllers.UpdateSubscription) // Adjusted route
-	r.DELETE("/subscriptions/:planId/:customerId", controllers.DeleteSubscription) // Adjusted route
+	r.GET("/subscriptions/:customerId", controllers.GetSubscription) // Adjusted route
+	r.PUT("/subscriptions/:customerId/:planId", controllers.UpdateSubscription) // Adjusted route
+	r.DELETE("/subscriptions/:customerId", controllers.DeleteSubscription) // Adjusted route
 
 	// Login route
 	r.POST("/auth/login", controllers.Login)
